@@ -19,6 +19,7 @@ def decodeUser(name):
 
     If no User object can be located, None is returned.
     """
+    # let's flex our Haskell muscles and do something lazy
     patterns = (
         lambda: User.objects.filter(email__contains=name)[:2],
         lambda: User.objects.filter(name__contains=name)[:2]
@@ -31,7 +32,7 @@ def decodeUser(name):
 
     return None
 
-def scrape():
+def scrape(debug=0):
     """
     Connects to GMail account specified by SCRAPER_USER and SCRAPER_PASSWORD.
     Idles until a message from SCRAPER_MAILING_LIST arrives, at which point the
@@ -39,7 +40,17 @@ def scrape():
     necessary. The body of the message is then analyzed to extract possible
     places where shan points might have been given out.
     """
-    pass
+    imap = imaplib2.IMAP4_SSL('imap.gmail.com', debug=debug)
+    imap.login(SCRAPER_USER, SCRAPER_PASSWORD)
+    imap.select('INBOX')
+
+    while True: # wheeeeeeeeee!
+        typ, data = imap.search(None, 'UnSeen')
+        for num in data[0].split():
+            imap.fetch(num, 'RFC882', callback=processMessage, cb_arg=num)
+
+        # block until further activity / timeout
+        imap.idle()
 
 if __name__ == '__main__':
     scrape()
