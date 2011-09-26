@@ -7,3 +7,8 @@ class User(models.Model):
 
     def __unicode__(self):
         return '%s <%s>' % (self.name, self.email)
+
+class Exchange(models.Model):
+    from_user = models.ForeignKey(User, related_name='+')
+    to_user = models.ForeignKey(User, related_name='+')
+    timestamp = models.DateTimeField()
