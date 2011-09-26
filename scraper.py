@@ -33,9 +33,8 @@ def scrape(debug=0):
 
             # block until further activity / timeout
             imap.idle()
-    except: # this hideous beast exists as a substitute to ContextManager :(
+    finally:
         imap.logout()
-        raise
 
 def processEmail((response, num, error)):
     typ, data = response
