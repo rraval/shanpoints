@@ -11,7 +11,7 @@ Functional Overview
 
 Whenever a google group forwards a message to a specific GMail account, the
 sender is added to the database with 0 initial Shan points. Every email may
-contain patterns of the form ``*name* +1`` or ``*name* ++``, with no limit on
+contain patterns of the form ``name +1`` or ``name ++``, with no limit on
 the number of names.
 
 Names are resolved to specific users, and if successful, their Shan points are

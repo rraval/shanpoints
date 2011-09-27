@@ -19,7 +19,7 @@ import imaplib2
 def scrape(debug=0):
     """
     Connects to GMail account specified by SCRAPER_USER and SCRAPER_PASSWORD.
-    Idles until a message from SCRAPER_MAILING_LIST arrives, at which point the
+    Idles until a message from SCRAPER_GOOGLE_GROUP arrives, at which point the
     sender of the message is added into the User model with 0 points if
     necessary. The body of the message is then analyzed to extract possible
     places where shan points might have been given out.
