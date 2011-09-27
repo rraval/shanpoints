@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 
+from datetime import datetime
 import email
+from email.iterators import typed_subpart_iterator
+from email.utils import parsedate
 import re
 
 from django.core.management import setup_environ
@@ -10,7 +13,7 @@ setup_environ(settings)
 
 from django.utils.html import strip_tags
 from django.utils.text import unescape_entities
-from tracker.models import User
+from tracker.models import User, Exchange
 import imaplib2
 
 def scrape(debug=0):
@@ -27,7 +30,15 @@ def scrape(debug=0):
 
     try:
         while True: # wheeeeeeeeee!
-            typ, data = imap.search(None, 'UnSeen')
+            typ, data = imap.search(
+                None,
+                'UNSEEN HEADER X-Google-Group-Id %s'
+                    % settings.SCRAPER_GOOGLE_GROUP
+            )
+
+            if typ != 'OK':
+                continue
+
             for num in data[0].split():
                 imap.fetch(num, 'RFC822', callback=processEmail, cb_arg=num)
 
@@ -68,26 +79,7 @@ def processEmail((response, num, error)):
         defaults={'name': from_name, 'points': 0}
     )
 
-    # buckets for different Content-Types
-    # FIXME: this is ugly as sin
-    contents = {'text/plain': [], 'text/html': []}
-    def bucketize(msg):
-        ct = msg.get_content_type()
-        if ct in contents:
-            try:
-                # closure over contents
-                contents[ct].append(msg)
-            except KeyError:
-                pass
-
-    if not message.is_multipart():
-        bucketize(message)
-    else:
-        # FIXME: I'm assuming there can be at most one level of nesting for
-        # multipart messages. If not, I need to rewrite this function in a
-        # recursive manner.
-        for msg in message.get_payload():
-            bucketize(msg)
+    ts = datetime(*parsedate(message['Date'])[0:6]) or datetime.now()
 
     # prefer text versions over HTML versions
     # FIXME: we return as soon as we give out a single shanpoint. The working
@@ -96,12 +88,12 @@ def processEmail((response, num, error)):
     # breaks if for example, I have two text/plain's that give points to a
     # different set of people. Only the people in the first text/plain will be
     # processed.
-    for t in contents['text/plain']:
-        if processMessage(from_user, cleanText(t.get_payload())) != 0:
+    for msg in typed_subpart_iterator(message, 'text', 'plain'):
+        if processMessage(from_user, ts, cleanText(msg.get_payload())) != 0:
             return
 
-    for h in contents['text/html']:
-        if processMessage(from_user, cleanHtml(h.get_payload())) != 0:
+    for msg in typed_subpart_iterator(message, 'text', 'html'):
+        if processMessage(from_user, ts, cleanHtml(msg.get_payload())) != 0:
             return
 
 def processMessage(from_user, ts, msg):
@@ -178,4 +170,4 @@ def cleanHtml(html):
     return unescape_entities(strip_tags(html))
 
 if __name__ == '__main__':
-    scrape(3)
+    scrape()
