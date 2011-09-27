@@ -30,11 +30,7 @@ def scrape(debug=0):
 
     try:
         while True: # wheeeeeeeeee!
-            typ, data = imap.search(
-                None,
-                'UNSEEN HEADER X-Google-Group-Id %s'
-                    % settings.SCRAPER_GOOGLE_GROUP
-            )
+            typ, data = imap.search(None, 'UNSEEN')
 
             if typ != 'OK':
                 continue
@@ -59,6 +55,10 @@ def processEmail((response, num, error)):
         return
 
     message = email.message_from_string(data[0][1])
+    if message['X-Google-Group-Id'] != settings.SCRAPER_GOOGLE_GROUP:
+        print 'Discarding %s' % message['Subject']
+        return
+
     from_header = message['From']
     if from_header is None:
         return
@@ -116,6 +116,7 @@ def processMessage(from_user, ts, msg):
             processed.add(to_user.pk)
 
             # log this
+            print '%s gave to %s' % (from_user.email, to_user.email)
             Exchange(from_user=from_user, to_user=to_user, timestamp=ts).save()
 
     return len(processed)
