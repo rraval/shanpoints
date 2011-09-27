@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Shan Points</title>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Points</th>
+            </tr>
+            {% for u in users %}
+                <tr>
+                    <td>{{ u.name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.points }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>
