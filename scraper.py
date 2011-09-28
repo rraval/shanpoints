@@ -111,8 +111,9 @@ def processMessage(from_user, ts, msg):
     Returns the number of points that were successfully given out.
     """
     processed = set()
-    for name in re.finditer(r'(\S\S\S+) *\+(1|\+)', msg):
-        to_user = decodeUser(name.group(1))
+
+    def giveUser(name):
+        to_user = decodeUser(name)
         if to_user is not None and to_user.pk not in processed and \
                 to_user.pk != from_user.pk:
             to_user.points += 1
@@ -122,6 +123,12 @@ def processMessage(from_user, ts, msg):
             # log this
             print '%s gave to %s' % (from_user.email, to_user.email)
             Exchange(from_user=from_user, to_user=to_user, timestamp=ts).save()
+
+    for name in re.finditer(r'(?P<name>\S\S\S+) *\+(1|\+)', msg):
+        giveUser(name.group('name'))
+
+    for name in re.finditer(r'(\+(1|\+) *(?P<name>\S\S\S+))', msg):
+        giveUser(name.group('name'))
 
     return len(processed)
 
