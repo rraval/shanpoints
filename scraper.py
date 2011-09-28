@@ -157,7 +157,7 @@ def decodeUser(name):
     return None
 
 def cleanText(text):
-    """
+    r"""
     Returns a version of text with all lines starting with '>' removed. This is
     to prevent quoted text from previous emails being interpreted as an exchange
     of shan points.
@@ -169,7 +169,7 @@ def cleanText(text):
     return regex.sub('', text)
 
 def cleanHtml(html):
-    """
+    r"""
     Returns a text version of html, by first removing any text in <blockquote>
     tags and then striping any other tags and replacing html entities. The
     <blockquote> strip is done for the same reasons as in cleanText().
