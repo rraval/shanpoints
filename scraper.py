@@ -39,7 +39,7 @@ def scrape(debug=0):
                 imap.fetch(num, 'RFC822', callback=processEmail, cb_arg=num)
 
             # block until further activity / timeout
-            imap.idle()
+            imap.idle(timeout=600)
     finally:
         imap.logout()
 
@@ -50,6 +50,9 @@ def processEmail((response, num, error)):
     html bodies, and calls processMessage() on them after cleaning them with
     cleanText() or cleanHtml().
     """
+    if response is None:
+        return
+
     typ, data = response
     if typ != 'OK':
         return
@@ -99,15 +102,16 @@ def processEmail((response, num, error)):
 def processMessage(from_user, ts, msg):
     """
     Processes a single message from the User object from_user. Looks for
-    patterns like 'foo +1' or 'foo ++' and tries to decode the user from the
-    name mentioned and give that user points.
+    patterns like 'foobar +1' or 'foobar ++' and tries to decode the user for
+    the name mentioned and give that user points. A name must be at least
+    4 characters long.
 
     Note that a single message can give at most one point to a User.
 
     Returns the number of points that were successfully given out.
     """
     processed = set()
-    for name in re.finditer(r'(\S+) *\+(1|\+)', msg):
+    for name in re.finditer(r'(\S\S\S+) *\+(1|\+)', msg):
         to_user = decodeUser(name.group(1))
         if to_user is not None and to_user.pk not in processed and \
                 to_user.pk != from_user.pk:
@@ -154,7 +158,8 @@ def cleanText(text):
     >>> cleanText('foo\n>bar\n>qux\nspam')
     'foo\n\n\nspam'
     """
-    return re.sub(r'^>.*$', '', text, flags=re.MULTILINE)
+    regex = re.compile(r'^>.*$', re.MULTILINE)
+    return regex.sub('', text)
 
 def cleanHtml(html):
     """
@@ -167,7 +172,8 @@ def cleanHtml(html):
     >>> cleanHtml('foo\n<blockquote\nsome-attr="some">bar</blockquote>&amp;st')
     'foo\n&st'
     """
-    html = re.sub(r'<blockquote.*</blockquote>', '', html, flags=re.DOTALL)
+    regex = re.compile(r'<blockquote.*</blockquote>', re.DOTALL)
+    html = regex.sub('', html)
     return unescape_entities(strip_tags(html))
 
 if __name__ == '__main__':
